@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">VoiceAssistant</string>
+    <string name="assistant_answer"> Вопрос понял. Думаю...</string>
+    <string name="send_button_text">Отправить</string>
+    <string name="question_field_hint">Задайте вопрос</string>
+
+    <string name="question_hello">привет</string>
+    <string name="question_how_are_you">как дела</string>
+    <string name="question_what_are_you_doing">чем занимаешься</string>
+
+    <string name="answer_hello">И вам привет!</string>
+    <string name="answer_how_are_you">Все отлично!</string>
+    <string name="answer_what_are_you_doing">Отвечаю на ваши вопросы</string>
+    <string name="answer_default">Вопрос понял. Думаю...</string>
+</resources>

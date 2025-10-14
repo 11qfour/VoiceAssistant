@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VoiceAssistant</string>
+    <string name="assistant_answer">I understand the question. I think...</string>
+    <string name="send_button_text">Send</string>
+    <string name="question_field_hint">Ask a question</string>
+    <string name="answer_hello">Hello to you too!</string>
+    <string name="answer_how_are_you">Everything is fine!</string>
+    <string name="answer_what_are_you_doing">I answer your questions</string>
+    <string name="answer_default">I understand the question. I think...</string>
+    <string name="question_hello">hello</string>
+    <string name="question_how_are_you">how are you</string>
+    <string name="question_what_are_you_doing">what are you doing</string>
+</resources>
