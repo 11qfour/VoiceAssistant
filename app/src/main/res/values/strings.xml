@@ -12,4 +12,18 @@
     <string name="answer_how_are_you">Все отлично!</string>
     <string name="answer_what_are_you_doing">Отвечаю на ваши вопросы</string>
     <string name="answer_default">Вопрос понял. Думаю...</string>
+
+    <!-- Ключевые слова для новых вопросов -->
+    <string name="question_what_day_is_it">какой сегодня день</string>
+    <string name="question_what_time_is_it">который час</string>
+    <string name="question_what_day_of_week">какой день недели</string>
+    <string name="question_days_until">сколько дней до</string>
+
+    <!-- Шаблоны для ответов -->
+    <string name="answer_template_date">Сегодня %s</string>
+    <string name="answer_template_time">Сейчас %s</string>
+    <string name="answer_template_day_of_week">Сегодня %s</string>
+    <string name="answer_template_days_until">До %1$s осталось %2$d дней</string>
+    <string name="answer_error_date_parse">Не могу распознать дату. Попробуйте формат дд.мм.гггг</string>
+
 </resources>

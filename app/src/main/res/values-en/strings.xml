@@ -11,4 +11,13 @@
     <string name="question_hello">hello</string>
     <string name="question_how_are_you">how are you</string>
     <string name="question_what_are_you_doing">what are you doing</string>
+    <string name="question_what_day_is_it">what day is it today</string>
+    <string name="question_what_time_is_it">what time is it</string>
+    <string name="question_what_day_of_week">what day of the week is it</string>
+    <string name="question_days_until">how many days until</string>
+    <string name="answer_template_date">Today %s</string>
+    <string name="answer_template_time">Now %s</string>
+    <string name="answer_template_day_of_week">Today %s</string>
+    <string name="answer_template_days_until">There are %2$d days left until %1$s</string>
+    <string name="answer_error_date_parse">I can\'t recognize the date. Try the dd.mm.yyyy format.</string>
 </resources>

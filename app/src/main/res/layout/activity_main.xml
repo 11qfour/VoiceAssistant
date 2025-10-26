@@ -6,30 +6,14 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <ScrollView
-        android:id="@+id/chatScrollView"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/chatMessageList"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="@dimen/default_margin"
-        android:layout_marginTop="@dimen/default_margin"
-        android:layout_marginEnd="@dimen/default_margin"
-        android:layout_marginBottom="@dimen/default_margin"
-
         app:layout_constraintBottom_toTopOf="@+id/linearLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-
-        android:fillViewport="true">
-
-        <TextView
-            android:id="@+id/chatWindow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="@dimen/chat_text_size"
-
-            android:gravity="bottom"/>
-    </ScrollView>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -51,7 +35,8 @@
             android:ems="10"
             android:hint="@string/question_field_hint"
             android:inputType="text"
-            android:text=""/>
+            android:text=""
+            android:imeOptions="flagNoExtractUi"/>
 
         <Button
             android:id="@+id/sendButton"
