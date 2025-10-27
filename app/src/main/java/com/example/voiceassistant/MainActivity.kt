@@ -1,7 +1,9 @@
 package com.example.voiceassistant
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
+import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -17,6 +19,8 @@ import androidx.core.util.Consumer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.voiceassistant.ai.AI
 import com.example.voiceassistant.databinding.ActivityMainBinding
+import com.example.voiceassistant.message.MessageEntity
+import java.time.LocalDateTime
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -38,6 +42,9 @@ class MainActivity : AppCompatActivity() {
 
     private val CHAT_HISTORY = "chat_history"
 
+    private lateinit var dbHelper: DBHelper
+    private lateinit var database: SQLiteDatabase
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         sPref = getSharedPreferences(APP_PREFERENCES, MODE_PRIVATE)
@@ -51,6 +58,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setSupportActionBar(binding.toolbar)
+
+        dbHelper = DBHelper(this)
+        database = dbHelper.writableDatabase
 
         Log.i(LOG_TAG, "onCreate")
 
@@ -70,11 +80,49 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState != null) {
+            // Если есть Bundle (поворот экрана, смена темы) - восстанавливаем из него
             val savedList = savedInstanceState.getParcelableArrayList<Message>(CHAT_HISTORY)
             if (savedList != null) {
                 messageListAdapter.messageList = savedList
             }
+        } else {
+            // Если Bundle пуст (холодный старт приложения) - загружаем из БД
+            loadMessagesFromDb()
         }
+        // Прокручиваем к последнему сообщению после загрузки
+        binding.chatMessageList.scrollToPosition(messageListAdapter.messageList.size - 1)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun loadMessagesFromDb() {
+        val cursor = database.query(DBHelper.TABLE_NAME, null, null, null, null, null, null)
+
+        if (cursor.moveToFirst()) {
+            // Убедимся, что мы правильно получаем индексы колонок
+            val messageIndex = cursor.getColumnIndexOrThrow(DBHelper.FIELD_MESSAGE)
+            val dateIndex = cursor.getColumnIndexOrThrow(DBHelper.FIELD_DATE)
+            val sendIndex = cursor.getColumnIndexOrThrow(DBHelper.FIELD_SEND) // <--- ВОТ ЭТО МЕСТО
+
+            messageListAdapter.messageList.clear() // Очищаем список перед загрузкой
+
+            do {
+                // --- ПРОВЕРЯЕМ ЛОГИКУ ЗДЕСЬ ---
+                val text = cursor.getString(messageIndex)
+                val date = cursor.getString(dateIndex)
+                val isSendInt = cursor.getInt(sendIndex) // Получаем 0 или 1
+
+                // Превращаем 0/1 в true/false
+                val isSendBoolean = isSendInt == 1
+
+                val entity = MessageEntity(text, date, isSendBoolean)
+                messageListAdapter.messageList.add(Message.fromEntity(entity))
+
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+
+        // Уведомляем адаптер, что данные изменились
+        messageListAdapter.notifyDataSetChanged()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -84,7 +132,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val userMessage = Message(userQuestion, isSend = true)
+        val userMessage = Message(userQuestion, isSend = true, LocalDateTime.now())
         messageListAdapter.messageList.add(userMessage)
         messageListAdapter.notifyItemInserted(messageListAdapter.messageList.size - 1)
         binding.chatMessageList.scrollToPosition(messageListAdapter.messageList.size - 1)
@@ -93,7 +141,7 @@ class MainActivity : AppCompatActivity() {
 
         ai.getAnswer(userQuestion, Consumer { answer ->
             runOnUiThread {
-                val assistantMessage = Message(answer, isSend = false)
+                val assistantMessage = Message(answer, isSend = false, LocalDateTime.now())
                 messageListAdapter.messageList.add(assistantMessage)
                 messageListAdapter.notifyItemInserted(messageListAdapter.messageList.size - 1)
                 binding.chatMessageList.scrollToPosition(messageListAdapter.messageList.size - 1)
@@ -134,6 +182,7 @@ class MainActivity : AppCompatActivity() {
         outState.putParcelableArrayList(CHAT_HISTORY, messageListAdapter.messageList)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onStop() {
         super.onStop()
         Log.i(LOG_TAG, "onStop")
@@ -141,6 +190,23 @@ class MainActivity : AppCompatActivity() {
         val editor = sPref!!.edit()
         editor.putBoolean(THEME, isLight)
         editor.apply()
+
+        database.delete(DBHelper.TABLE_NAME, null, null)
+
+        for (message in messageListAdapter.messageList) {
+            val entity = MessageEntity.fromMessage(message)
+            val contentValues = ContentValues()
+
+            contentValues.put(DBHelper.FIELD_MESSAGE, entity.text)
+            contentValues.put(DBHelper.FIELD_DATE, entity.date)
+
+            // --- ПРОВЕРЯЕМ ЛОГИКУ ЗДЕСЬ ---
+            // Правильно ли мы конвертируем Boolean в Int (0 или 1)
+            val isSendInt = if (entity.isSend) 1 else 0
+            contentValues.put(DBHelper.FIELD_SEND, isSendInt)
+
+            database.insert(DBHelper.TABLE_NAME, null, contentValues)
+        }
     }
 
     override fun onDestroy() {
@@ -150,6 +216,9 @@ class MainActivity : AppCompatActivity() {
         // Важно освобождать ресурсы TTS
         textToSpeech.stop()
         textToSpeech.shutdown()
+
+        database.close()
+        dbHelper.close()
     }
 
     // Ты можешь добавить и остальные методы жизненного цикла для логирования
