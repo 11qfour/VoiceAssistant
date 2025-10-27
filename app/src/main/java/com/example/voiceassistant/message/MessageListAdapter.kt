@@ -1,12 +1,14 @@
-package com.example.voiceassistant.message
+package com.example.voiceassistant
 
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
-import com.example.voiceassistant.R
+import com.example.voiceassistant.message.MessageViewHolder
 
 class MessageListAdapter : RecyclerView.Adapter<MessageViewHolder>(){
-    var messageList = mutableListOf<Message>()
+    var messageList = ArrayList<Message>()
 
     // Константы для определения типа ячейки (отправленное или полученное)
     private companion object {
@@ -27,6 +29,7 @@ class MessageListAdapter : RecyclerView.Adapter<MessageViewHolder>(){
     }
 
     // Этот метод связывает ViewHolder с данными по конкретной позиции
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         val message = messageList[position]
         holder.bind(message)
