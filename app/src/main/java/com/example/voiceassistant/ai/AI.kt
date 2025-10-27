@@ -1,8 +1,9 @@
-package com.example.voiceassistant
+package com.example.voiceassistant.ai
 
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.example.voiceassistant.R
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -10,6 +11,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import androidx.core.util.Consumer
+import com.example.voiceassistant.forecast.ForecastToString
+import java.util.regex.Pattern
 
 class AI(private val context: Context){
 
@@ -20,31 +24,45 @@ class AI(private val context: Context){
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getAnswer(question: String): String {
+    fun getAnswer(question: String, callback: Consumer<String>){
         val cleanedQuestion = question.trim().lowercase()
 
-        // Проверяем новые, более сложные вопросы
-        // `when` - это как `switch` в других языках
-        return when {
-            // "Который час?"
+        // 2. Проверяем вопрос о погоде ПЕРЕД блоком `when`
+        val cityPattern: Pattern =
+            Pattern.compile("погода.* (\\p{L}+)", Pattern.CASE_INSENSITIVE)
+        val matcher = cityPattern.matcher(cleanedQuestion)
+
+        if (matcher.find()) {
+            val cityName: String? = matcher.group(1)
+
+            // Если вопрос о погоде, запускаем асинхронный запрос
+            ForecastToString().getForecast(cityName, Consumer { weatherString ->
+                // Когда придет ответ из сети, вызываем callback
+                callback.accept(weatherString)
+            })
+            // И сразу выходим из функции, чтобы не выполнять `when`
+            return
+        }
+
+        // 3. Если вопрос НЕ о погоде, выполняется твоя старая синхронная логика
+        val answer = when {
             cleanedQuestion.contains(context.getString(R.string.question_what_time_is_it)) ->
                 getCurrentTime()
 
-            // "Какой сегодня день?"
             cleanedQuestion.contains(context.getString(R.string.question_what_day_is_it)) ->
                 getCurrentDate()
 
-            // "Какой день недели?"
             cleanedQuestion.contains(context.getString(R.string.question_what_day_of_week)) ->
                 getDayOfWeek()
 
-            // "Сколько дней до ...?"
             cleanedQuestion.contains(context.getString(R.string.question_days_until)) ->
                 getDaysUntil(cleanedQuestion)
 
-            // Если ничего не подошло, ищем в старом словаре
             else -> getSimpleAnswer(cleanedQuestion)
         }
+
+        // 4. Для синхронных ответов вызываем callback немедленно
+        callback.accept(answer)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

@@ -1,4 +1,4 @@
-package com.example.voiceassistant
+package com.example.voiceassistant.message
 
 import android.os.Parcelable
 import java.util.Date
