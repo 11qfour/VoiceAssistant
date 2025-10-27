@@ -1,12 +1,12 @@
-package com.example.voiceassistant.message
+package com.example.voiceassistant
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.voiceassistant.R
+import com.example.voiceassistant.message.MessageViewHolder
 
 class MessageListAdapter : RecyclerView.Adapter<MessageViewHolder>(){
-    var messageList = mutableListOf<Message>()
+    var messageList = ArrayList<Message>()
 
     // Константы для определения типа ячейки (отправленное или полученное)
     private companion object {
