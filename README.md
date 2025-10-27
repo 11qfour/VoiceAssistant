@@ -62,7 +62,7 @@
 ### 3. Настройка проекта
 1.  Клонируйте репозиторий:
     ```bash
-    git clone <URL вашего репозитория>
+    git clone https://github.com/11qfour/VoiceAssistant.git
     ```
 2.  Откройте проект в Android Studio.
 3.  Откройте файл `app/src/main/java/com/example/voiceassistant/ForecastApi.kt`.
