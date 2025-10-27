@@ -17,16 +17,17 @@ class ForecastToString {
                 val result = response?.body()
 
                 if (result != null) {
-                    val temp = result.main?.temp?.toInt() // Округляем до целого
-                    val description = result.weather.getOrNull(0)?.description
+                    val tempString = result.temperature?.value
+                    val temp = tempString?.toDoubleOrNull()?.toInt()
+                    val description = result.weather?.value
+
                     val answer = "В городе $city сейчас $temp градуса, $description"
                     callback.accept(answer)
-                } else {// Если тело ответа пустое
+                } else {
                     callback.accept("Не могу узнать погоду для города $city")
                 }
             }
 
-            // Этот метод вызывается при ошибке (нет сети, сервер недоступен)
             override fun onFailure(call: Call<Forecast?>, t: Throwable) {
                 Log.w("WEATHER", t.message ?: "Unknown error")
                 callback.accept("Произошла ошибка при получении данных о погоде.")

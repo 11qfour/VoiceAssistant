@@ -1,27 +1,27 @@
 package com.example.voiceassistant.forecast
 
-import com.google.gson.annotations.Expose
-import com.google.gson.annotations.SerializedName
+import org.simpleframework.xml.Attribute
+import org.simpleframework.xml.Element
+import org.simpleframework.xml.Root
 import java.io.Serializable
 
+@Root(name = "current", strict = false)
 class Forecast:Serializable { //главный клас, описывающий весь ответ
-    @SerializedName("main")
-    @Expose
-    var main: Main? = null
+    @field:Element(name = "temperature") //вложенный тег
+    var temperature: Temperature? = null
 
-    @SerializedName("weather")
-    @Expose
-    var weather: ArrayList<Weather?> = ArrayList()
+    @field:Element(name = "weather")
+    var weather: Weather? = null
 }
 
-class Main { //вложенный класс для main в json
-    @SerializedName("temp")
-    @Expose
-    var temp: Double? = null
+@Root(name = "temperature", strict = false)
+class Temperature {
+    @field:Attribute(name = "value")
+    var value: String? = null
 }
 
-class Weather { //вложенный для массива weather в json
-    @SerializedName("description")
-    @Expose
-    var description: String? = null
+@Root(name = "weather", strict = false)
+class Weather {
+    @field:Attribute(name = "value")
+    var value: String? = null
 }
