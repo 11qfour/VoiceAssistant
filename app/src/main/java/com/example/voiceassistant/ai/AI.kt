@@ -13,6 +13,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import androidx.core.util.Consumer
 import com.example.voiceassistant.forecast.ForecastToString
+import com.example.voiceassistant.forecast.HtmlWebService
 import java.util.regex.Pattern
 
 class AI(private val context: Context){
@@ -27,24 +28,41 @@ class AI(private val context: Context){
     fun getAnswer(question: String, callback: Consumer<String>){
         val cleanedQuestion = question.trim().lowercase()
 
-        // 2. Проверяем вопрос о погоде ПЕРЕД блоком `when`
-        val cityPattern: Pattern =
-            Pattern.compile("погода.* (\\p{L}+)", Pattern.CASE_INSENSITIVE)
-        val matcher = cityPattern.matcher(cleanedQuestion)
+        val cityInfoPattern: Pattern =
+            Pattern.compile("^что за город (\\p{L}+)", Pattern.CASE_INSENSITIVE)
 
-        if (matcher.find()) {
-            val cityName: String? = matcher.group(1)
+        val weatherPattern: Pattern =
+            Pattern.compile("погода (?:в городе )?(\\p{L}+)$", Pattern.CASE_INSENSITIVE)
 
-            // Если вопрос о погоде, запускаем асинхронный запрос
-            ForecastToString().getForecast(cityName, Consumer { weatherString ->
-                // Когда придет ответ из сети, вызываем callback
-                callback.accept(weatherString)
-            })
-            // И сразу выходим из функции, чтобы не выполнять `when`
+        val numberPattern: Pattern =
+            Pattern.compile("сколько будет (\\d+)$", Pattern.CASE_INSENSITIVE)
+
+        val cityInfoMatcher = cityInfoPattern.matcher(cleanedQuestion)
+        if (cityInfoMatcher.find()) {
+            val cityName = cityInfoMatcher.group(1)
+            if (cityName != null) {
+                HtmlWebService.HtmlWebToString().cityInfoToString(cityName, callback)
+                return
+            }
+        }
+
+        val weatherMatcher = weatherPattern.matcher(cleanedQuestion)
+        if (weatherMatcher.find()) {
+            val cityName: String? = weatherMatcher.group(1)
+            ForecastToString().getForecast(cityName, callback)
             return
         }
 
-        // 3. Если вопрос НЕ о погоде, выполняется твоя старая синхронная логика
+        val numberMatcher = numberPattern.matcher(cleanedQuestion)
+        if (numberMatcher.find()) {
+            val number = numberMatcher.group(1)?.toIntOrNull()
+            if (number != null) {
+                HtmlWebService.HtmlWebToString().numberToString(number, callback)
+                return
+            }
+        }
+
+
         val answer = when {
             cleanedQuestion.contains(context.getString(R.string.question_what_time_is_it)) ->
                 getCurrentTime()
@@ -61,7 +79,6 @@ class AI(private val context: Context){
             else -> getSimpleAnswer(cleanedQuestion)
         }
 
-        // 4. Для синхронных ответов вызываем callback немедленно
         callback.accept(answer)
     }
 
@@ -118,6 +135,21 @@ class AI(private val context: Context){
             context.getString(foundEntry.value)
         } else {
             context.getString(R.string.answer_default)
+        }
+    }
+
+    private fun getDegreeWord(temperature: Int): String {
+        val lastDigit = temperature % 10
+        val lastTwoDigits = temperature % 100
+
+        if (lastTwoDigits in 11..14) {
+            return "градусов"
+        }
+
+        return when (lastDigit) {
+            1 -> "градус"
+            2, 3, 4 -> "градуса"
+            else -> "градусов"
         }
     }
 }
