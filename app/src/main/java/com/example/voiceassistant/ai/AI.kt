@@ -1,8 +1,9 @@
-package com.example.voiceassistant
+package com.example.voiceassistant.ai
 
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.example.voiceassistant.R
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -10,6 +11,10 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import androidx.core.util.Consumer
+import com.example.voiceassistant.forecast.ForecastToString
+import com.example.voiceassistant.forecast.HtmlWebService
+import java.util.regex.Pattern
 
 class AI(private val context: Context){
 
@@ -20,31 +25,61 @@ class AI(private val context: Context){
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getAnswer(question: String): String {
+    fun getAnswer(question: String, callback: Consumer<String>){
         val cleanedQuestion = question.trim().lowercase()
 
-        // Проверяем новые, более сложные вопросы
-        // `when` - это как `switch` в других языках
-        return when {
-            // "Который час?"
+        val cityInfoPattern: Pattern =
+            Pattern.compile("^что за город (\\p{L}+)", Pattern.CASE_INSENSITIVE)
+
+        val weatherPattern: Pattern =
+            Pattern.compile("погода (?:в городе )?(\\p{L}+)$", Pattern.CASE_INSENSITIVE)
+
+        val numberPattern: Pattern =
+            Pattern.compile("сколько будет (\\d+)$", Pattern.CASE_INSENSITIVE)
+
+        val cityInfoMatcher = cityInfoPattern.matcher(cleanedQuestion)
+        if (cityInfoMatcher.find()) {
+            val cityName = cityInfoMatcher.group(1)
+            if (cityName != null) {
+                HtmlWebService.HtmlWebToString().cityInfoToString(cityName, callback)
+                return
+            }
+        }
+
+        val weatherMatcher = weatherPattern.matcher(cleanedQuestion)
+        if (weatherMatcher.find()) {
+            val cityName: String? = weatherMatcher.group(1)
+            ForecastToString().getForecast(cityName, callback)
+            return
+        }
+
+        val numberMatcher = numberPattern.matcher(cleanedQuestion)
+        if (numberMatcher.find()) {
+            val number = numberMatcher.group(1)?.toIntOrNull()
+            if (number != null) {
+                HtmlWebService.HtmlWebToString().numberToString(number, callback)
+                return
+            }
+        }
+
+
+        val answer = when {
             cleanedQuestion.contains(context.getString(R.string.question_what_time_is_it)) ->
                 getCurrentTime()
 
-            // "Какой сегодня день?"
             cleanedQuestion.contains(context.getString(R.string.question_what_day_is_it)) ->
                 getCurrentDate()
 
-            // "Какой день недели?"
             cleanedQuestion.contains(context.getString(R.string.question_what_day_of_week)) ->
                 getDayOfWeek()
 
-            // "Сколько дней до ...?"
             cleanedQuestion.contains(context.getString(R.string.question_days_until)) ->
                 getDaysUntil(cleanedQuestion)
 
-            // Если ничего не подошло, ищем в старом словаре
             else -> getSimpleAnswer(cleanedQuestion)
         }
+
+        callback.accept(answer)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -100,6 +135,21 @@ class AI(private val context: Context){
             context.getString(foundEntry.value)
         } else {
             context.getString(R.string.answer_default)
+        }
+    }
+
+    private fun getDegreeWord(temperature: Int): String {
+        val lastDigit = temperature % 10
+        val lastTwoDigits = temperature % 100
+
+        if (lastTwoDigits in 11..14) {
+            return "градусов"
+        }
+
+        return when (lastDigit) {
+            1 -> "градус"
+            2, 3, 4 -> "градуса"
+            else -> "градусов"
         }
     }
 }

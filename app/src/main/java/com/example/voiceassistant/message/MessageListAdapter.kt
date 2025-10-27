@@ -1,8 +1,9 @@
-package com.example.voiceassistant
+package com.example.voiceassistant.message
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.voiceassistant.R
 
 class MessageListAdapter : RecyclerView.Adapter<MessageViewHolder>(){
     var messageList = mutableListOf<Message>()

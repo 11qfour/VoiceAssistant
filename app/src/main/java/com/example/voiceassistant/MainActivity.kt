@@ -10,11 +10,13 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ScrollView
-import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.core.util.Consumer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.voiceassistant.ai.AI
+import com.example.voiceassistant.message.Message
+import com.example.voiceassistant.message.MessageListAdapter
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -72,32 +74,40 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun onSend() {
-        if (questionText.text.isNotEmpty()) {
-            val userQuestion = questionText.text.toString()
-
-            // 1. Добавляем сообщение пользователя в список
-            val userMessage = Message(userQuestion, isSend = true)
-            messageListAdapter.messageList.add(userMessage)
-            // Оповещаем адаптер о новом элементе
-            messageListAdapter.notifyItemInserted(messageListAdapter.messageList.size - 1)
-
-            val answer = ai.getAnswer(userQuestion)
-
-            // 2. Добавляем ответ ассистента в список
-            val assistantMessage = Message(answer, isSend = false)
-            messageListAdapter.messageList.add(assistantMessage)
-            // Оповещаем адаптер о втором новом элементе
-            messageListAdapter.notifyItemInserted(messageListAdapter.messageList.size - 1)
-
-            // 3. Прокручиваем список к последнему сообщению
-            chatMessageList.scrollToPosition(messageListAdapter.messageList.size - 1)
-
-            textToSpeech.speak(answer, TextToSpeech.QUEUE_FLUSH, null, null)
-            questionText.text.clear()
-            dismissKeyboard()
+        val userQuestion = questionText.text.toString()
+        if (userQuestion.isEmpty()) {
+            return // Если поле пустое, ничего не делаем
         }
-    }
 
+        // Добавляем сообщение пользователя в список и обновляем UI
+        val userMessage = Message(userQuestion, isSend = true)
+        messageListAdapter.messageList.add(userMessage)
+        messageListAdapter.notifyItemInserted(messageListAdapter.messageList.size - 1)
+
+        // Сразу прокручиваем к сообщению пользователя
+        chatMessageList.scrollToPosition(messageListAdapter.messageList.size - 1)
+
+        // Очищаем поле ввода и скрываем клавиатуру
+        questionText.text.clear()
+        dismissKeyboard()
+
+        // Запускаем получение ответа от AI, передавая ему callback
+        ai.getAnswer(userQuestion, Consumer { answer ->
+            // все действия с UI должны быть в основном потоке!
+            runOnUiThread {
+                //Добавляем ответ ассистента в список и обновляем UI
+                val assistantMessage = Message(answer, isSend = false)
+                messageListAdapter.messageList.add(assistantMessage)
+                messageListAdapter.notifyItemInserted(messageListAdapter.messageList.size - 1)
+
+                // Прокручиваем список к НОВОМУ последнему сообщению (ответу ассистента)
+                chatMessageList.scrollToPosition(messageListAdapter.messageList.size - 1)
+
+                // Озвучиваем ответ
+                textToSpeech.speak(answer, TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+        })
+    }
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putParcelableArrayList("chat_history", ArrayList(messageListAdapter.messageList))
